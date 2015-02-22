@@ -1,4 +1,4 @@
-(ns httpcrawler.crawler
+(ns httpcrawler.core
   (:require [org.httpkit.client :as http]
             [clojure.core.async :refer [chan go go-loop <! close! put! <!!]]
             [httpcrawler.timer :as timer])
