@@ -7,6 +7,5 @@
                  [http-kit "2.1.16"]
                  [enlive "1.1.5"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
-  :main httpcrawler.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

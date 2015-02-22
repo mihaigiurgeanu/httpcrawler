@@ -1,6 +1,6 @@
 (ns httpprobe.core-test
   (:require [clojure.test :refer :all]
-            [httpprobe.core :refer :all]))
+            [httpcrawler.crawler :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."

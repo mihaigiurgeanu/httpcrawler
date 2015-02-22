@@ -10,7 +10,11 @@ Download from http://example.com/FIXME.
 
 FIXME: explanation
 
-    $ java -jar httpprobe-0.1.0-SNAPSHOT-standalone.jar [args]
+    (require ['httpcrawler.core :refer ['crawl]])
+
+    (crawl ["http://www.test.com/start-page.html"] options
+           (fn [{:keys [opts body status headers error]}]
+             (...)))
 
 ## Options
 
