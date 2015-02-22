@@ -1,4 +1,4 @@
-(ns httpprobe.timer)
+(ns httpcrawler.timer)
 
 (def ^:dynamic *start-time* (System/nanoTime))
 

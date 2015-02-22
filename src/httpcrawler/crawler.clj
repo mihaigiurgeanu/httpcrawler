@@ -1,8 +1,8 @@
-(ns httpprobe.probes
+(ns httpcrawler.crawler
   (:require [org.httpkit.client :as http]
             [clojure.core.async :refer [chan go go-loop <! close! put! <!!]]
-            [httpprobe.timer :as timer])
-  (:use [httpprobe.parser :only [extract-title]]))
+            [httpcrawler.timer :as timer])
+  (:use [httpcrawler.parser :only [extract-anchors]]))
 
 (def ^:dynamic *permissions-channel*)
 (def ^:dynamic *http-options* {})
@@ -23,8 +23,7 @@
      response-number
      (if trace-redirects (str trace-redirects "->" url) url)
      status
-     error
-     (extract-title body))))
+     error)))
 
 (defn- decrement-pending-requests
   "Decrement the number of pending requests. If this number is
@@ -74,7 +73,7 @@
                 (decrement-pending-requests)
                 (+ 1 crt-rsp-no)))))))
 
-(defn send-probes
+(defn crawl
   "Takes a list of hosts and a list of paths. Sends
   GET requests to all the paths for each and every
   hosts in the list. Retrieves info if the path si valid
