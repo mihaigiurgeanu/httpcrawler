@@ -1,6 +1,6 @@
 # httpcrawler
 
-FIXME: description
+Fast and small web crawler library.
 
 ## Installation
 
