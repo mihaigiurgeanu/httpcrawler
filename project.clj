@@ -1,5 +1,5 @@
-(defproject httpprobe "0.1.2"
-  :description "Sends many http GET request"
+(defproject httpcrawler "0.1.0-SNAPSHOT"
+  :description "Very fast web crawler based on http-kit"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
