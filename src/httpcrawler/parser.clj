@@ -4,7 +4,7 @@
 (defn parse-html [html-source]
   (-> html-source java.io.StringReader. html/html-resource))
 
-(defn extract-anchors [body]
+(defn extract-urls [body]
   (try
     (when-let [title (first (html/select (parse-html body) [:title]))]
       (html/text title))

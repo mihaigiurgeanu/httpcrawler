@@ -1,7 +1,7 @@
 (ns httpprobe.core-test
   (:require [clojure.test :refer :all]
-            [httpcrawler.crawler :refer :all]))
+            [httpcrawler.core :refer :all]))
 
-(deftest a-test
+(deftest
   (testing "FIXME, I fail."
     (is (= 0 1))))
