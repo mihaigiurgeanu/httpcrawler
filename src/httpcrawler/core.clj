@@ -42,6 +42,7 @@
         (put! permissions-channel {:url url :error e})
         (send responses-count
               (fn [crt-rsp-no]
+                (save-fn url {:error e})
                 (+ 1 crt-rsp-no)))))))
 
 (defn- add-urls-from-permission [current-urls {:keys [error urls url]}]
