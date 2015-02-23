@@ -5,6 +5,14 @@
 (defn- parse-html [html-source]
   (-> html-source java.io.StringReader. html/html-resource))
 
+(defn safe-normalize [url opts]
+  (try
+    (normalize url opts)
+    (catch Exception e
+      (binding [*out* *err*]
+        (println url e)
+        nil))))
+
 (defn extract-urls [base body]
   (let [base-uri (normalize base)
         internal-host (.getHost base-uri)
@@ -15,13 +23,15 @@
      (concat (->> (html/select parsed-body [:a])
                   (map :attrs)
                   (map :href)
-                  (map #(normalize % {:base base-str})))
+                  (map #(safe-normalize % {:base base-str})))
              (->> (html/select parsed-body [:img])
                   (map :attrs)
                   (map :src)
-                  (map #(normalize % {:base base-str}))))
-     (filter #(and (= internal-host (.getHost %))
-                   (= internal-port (.getPort %))))
+                  (map #(safe-normalize % {:base base-str}))))
+     (filter #(and
+               %
+               (= internal-host (.getHost %))
+               (= internal-port (.getPort %))))
      (map #(.toString %)))))
 
 #_(normalize "http://cucu.mucu.com")
