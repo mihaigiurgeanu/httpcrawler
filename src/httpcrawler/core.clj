@@ -32,7 +32,7 @@
                    *err* err]
            (if error
              (put! permissions-channel {:url url :error error})
-             (put! permissions-channel {:url url :urls (extract-urls body)}))
+             (put! permissions-channel {:url url :urls (extract-urls url body)}))
            (send responses-count
                  (fn [crt-rsp-no]
                    (let [this-rsp-no (+ crt-rsp-no 1)]
