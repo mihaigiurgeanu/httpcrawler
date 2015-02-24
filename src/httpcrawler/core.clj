@@ -51,7 +51,7 @@
       (if (instance? Exception error)
         (do
           (println "Exception for" url (.getMessage error))
-          (.printStrackTrace error *err*))
+          (.printStackTrace error *err*))
         (println "Error for" url error))))
 
   (if (empty? urls)
