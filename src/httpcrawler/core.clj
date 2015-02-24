@@ -22,7 +22,7 @@
     (http/get
      url
      *http-options*
-     (fn [{:keys [body error] :as response}]
+     (fn [{:keys [body error headers] :as response}]
        (try
          (binding [*permissions-channel* permissions-channel
                    *responses-count* responses-count
@@ -32,7 +32,10 @@
                    *err* err]
            (if error
              (put! permissions-channel {:url url :error error})
-             (put! permissions-channel {:url url :urls (extract-urls url body)}))
+             (let [{:keys [content-type]} headers]
+               (if (and content-type (re-matches #"text/html.*" content-type))
+                 (put! permissions-channel {:url url :urls (extract-urls url body)})
+                 (put! permissions-channel {:url url :urls []}))))
            (send responses-count
                  (fn [crt-rsp-no]
                    (let [this-rsp-no (+ crt-rsp-no 1)]
