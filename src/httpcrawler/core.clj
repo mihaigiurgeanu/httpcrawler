@@ -19,11 +19,11 @@
         out *out*
         err *err*]
     (swap! pending-requests + 1)
-    (try
-      (http/get
-       url
-       *http-options*
-       (fn [{:keys [body error] :as response}]
+    (http/get
+     url
+     *http-options*
+     (fn [{:keys [body error] :as response}]
+       (try
          (binding [*permissions-channel* permissions-channel
                    *responses-count* responses-count
                    *no-urls-left* no-urls-left
@@ -37,13 +37,13 @@
                  (fn [crt-rsp-no]
                    (let [this-rsp-no (+ crt-rsp-no 1)]
                      (save-fn url response)
-                     this-rsp-no))))))
-      (catch Exception e
-        (put! permissions-channel {:url url :error e})
-        (send responses-count
-              (fn [crt-rsp-no]
-                (save-fn url {:error e})
-                (+ 1 crt-rsp-no)))))))
+                     this-rsp-no))))
+         (catch Exception e
+           (put! permissions-channel {:url url :error e})
+           (send responses-count
+                 (fn [crt-rsp-no]
+                   (save-fn url {:error e})
+                   (+ 1 crt-rsp-no)))))))))
 
 (defn- add-urls-from-permission [current-urls {:keys [error urls url]}]
   (when error
@@ -56,16 +56,16 @@
 
   (if (empty? urls)
     current-urls
-    (loop [resulting-urls (transient current-urls) to-add urls]
+    (loop [resulting-urls current-urls to-add urls]
       (if (empty? to-add)
-        (persistent! resulting-urls)
+        resulting-urls
         (let [[next-to-add & rest-to-add] to-add]
           (recur
            (if (contains? @*added-urls* next-to-add)
              resulting-urls
              (do
                (swap! *added-urls* conj next-to-add)
-               (conj! resulting-urls next-to-add)))
+               (conj resulting-urls next-to-add)))
            rest-to-add))))))
 
 #_(binding [*added-urls* (atom #{"http://server1"})]
@@ -73,7 +73,7 @@
   (add-urls-from-permission #{} {:urls ["http://server1" "http://server2" "http://server3"]}))
 
 (defn- send-requests! [urls save-fn]
-  (doseq [url urls] (send-request! url)))
+  (doseq [url urls] (send-request! url save-fn)))
 
 (defn crawl
   "Crawls all the internal links of a site, calling save-fn function for
@@ -94,8 +94,8 @@
         (when-let [permission (<!! *permissions-channel*)]
           (swap! *pending-requests* - 1)
           (let [unprocessed-urls- (add-urls-from-permission unprocessed-urls permission)]
-            (if (not-empty unprocessed-urls)
-              (let [to-send [- batch-size @*pending-requests*]
+            (if (not-empty unprocessed-urls-)
+              (let [to-send (- batch-size @*pending-requests*)
                     us (take to-send unprocessed-urls-)
                     us-rest (drop to-send unprocessed-urls-)]
                 (reset! *no-urls-left* false)
