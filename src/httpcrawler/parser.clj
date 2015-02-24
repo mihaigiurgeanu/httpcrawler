@@ -1,6 +1,7 @@
 (ns httpcrawler.parser
   (:require [net.cgrand.enlive-html :as html])
-  (:use [url-normalizer.core :exclude (resolve)]))
+  (:use [url-normalizer.core :exclude (resolve)]
+         httpcrawler.log))
 
 (defn- parse-html [html-source]
   (-> html-source java.io.StringReader. html/html-resource))
@@ -8,9 +9,9 @@
 (defn safe-normalize [url opts]
   (try
     (normalize url opts)
-    (catch java.net.MalformedURLException e nil)
+    #_(catch java.net.MalformedURLException e nil)
     (catch Exception e
-      (binding [*out* *err*]
+      (with-stderr
         (println url e)
         nil))))
 

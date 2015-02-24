@@ -3,7 +3,8 @@
             [clojure.core.async :refer [chan go go-loop <! close! put! <!!]]
             [httpcrawler.timer :as timer])
   (:use [httpcrawler.parser :only [extract-urls]]
-        [url-normalizer.core :only [normalize]]))
+        [url-normalizer.core :only [normalize]]
+        httpcrawler.log))
 
 (def ^:dynamic *permissions-channel*)
 (def ^:dynamic *http-options* {})
@@ -20,38 +21,45 @@
         out *out*
         err *err*]
     (swap! pending-requests + 1)
-    (http/get
-     url
-     *http-options*
-     (fn [{:keys [body error headers] :as response}]
-       (try
-         (binding [*permissions-channel* permissions-channel
-                   *responses-count* responses-count
-                   *no-urls-left* no-urls-left
-                   *pending-requests* pending-requests
-                   *out* out
-                   *err* err]
-           (if error
-             (put! permissions-channel {:url url :error error})
-             (let [{:keys [content-type]} headers]
-               (if (and content-type (re-matches #"text/html.*" content-type))
-                 (put! permissions-channel {:url url :urls (extract-urls url body)})
-                 (put! permissions-channel {:url url :urls []}))))
-           (send responses-count
-                 (fn [crt-rsp-no]
-                   (let [this-rsp-no (+ crt-rsp-no 1)]
-                     (save-fn url response)
-                     this-rsp-no))))
-         (catch Exception e
-           (put! permissions-channel {:url url :error e})
-           (send responses-count
-                 (fn [crt-rsp-no]
-                   (save-fn url {:error e})
-                   (+ 1 crt-rsp-no)))))))))
+    (try
+      (http/get
+       url
+       *http-options*
+       (fn [{:keys [body error headers] :as response}]
+         (try
+           (binding [*permissions-channel* permissions-channel
+                     *responses-count* responses-count
+                     *no-urls-left* no-urls-left
+                     *pending-requests* pending-requests
+                     *out* out
+                     *err* err]
+             (if error
+               (put! permissions-channel {:url url :error error})
+               (let [{:keys [content-type]} headers]
+                 (if (and content-type (re-matches #"text/html.*" content-type))
+                   (put! permissions-channel {:url url :urls (extract-urls url body)})
+                   (put! permissions-channel {:url url :urls []}))))
+             (send responses-count
+                   (fn [crt-rsp-no]
+                     (let [this-rsp-no (+ crt-rsp-no 1)]
+                       (save-fn url response)
+                       this-rsp-no))))
+           (catch Exception e
+             (put! permissions-channel {:url url :error e})
+             (send responses-count
+                   (fn [crt-rsp-no]
+                     (save-fn url {:error e})
+                     (+ 1 crt-rsp-no)))))))
+      (catch Exception e
+        (put! permissions-channel {:url url :error e})
+        (send responses-count
+              (fn [crt-rsp-no]
+                (save-fn url {:error e})
+                (+ 1 crt-rsp-no)))))))
 
 (defn- add-urls-from-permission [current-urls {:keys [error urls url]}]
   (when error
-    (binding [*out* *err*]
+    (with-stderr
       (if (instance? Exception error)
         (do
           (println "Exception for" url (.getMessage error))
@@ -84,7 +92,7 @@
   each response retrieved. The save-fn function is called passing the url
   and the http-kit's response."
   [start-page save-fn batch-size http-options]
-  (let [start-page-url (normalize start-page)
+  (let [start-page-url (.toString (normalize start-page))
         urls #{start-page-url}]
     (binding [*permissions-channel* (chan batch-size)
               *pending-requests* (atom 0)
@@ -93,7 +101,8 @@
               *no-urls-left* (atom false)
               *added-urls* (atom urls)]
 
-      (println (timer/ms) start-page-url "Start!")
+      (with-stderr
+        (println (timer/ms) start-page-url "Start!"))
 
       (send-request! start-page-url save-fn)
       ;;send the rest of the request
@@ -113,4 +122,5 @@
                 (when (<= @*pending-requests* 0) (close! *permissions-channel*))
                 (recur []))))))
 
-      (println (timer/ms) start-page-url "Done!" @*responses-count* "urls processed"))))
+      (with-stderr
+        (println (timer/ms) start-page-url "Done!" @*responses-count* "urls processed")))))
