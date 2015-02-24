@@ -2,7 +2,8 @@
   (:require [org.httpkit.client :as http]
             [clojure.core.async :refer [chan go go-loop <! close! put! <!!]]
             [httpcrawler.timer :as timer])
-  (:use [httpcrawler.parser :only [extract-urls]]))
+  (:use [httpcrawler.parser :only [extract-urls]]
+        [url-normalizer.core :only [normalize]]))
 
 (def ^:dynamic *permissions-channel*)
 (def ^:dynamic *http-options* {})
@@ -82,14 +83,17 @@
   "Crawls all the internal links of a site, calling save-fn function for
   each response retrieved. The save-fn function is called passing the url
   and the http-kit's response."
-  [start-page-url save-fn batch-size http-options]
-  (let [urls #{start-page-url}]
+  [start-page save-fn batch-size http-options]
+  (let [start-page-url (normalize start-page)
+        urls #{start-page-url}]
     (binding [*permissions-channel* (chan batch-size)
               *pending-requests* (atom 0)
               *http-options* http-options
               *responses-count* (agent 0)
               *no-urls-left* (atom false)
               *added-urls* (atom urls)]
+
+      (println (timer/ms) start-page-url "Start!")
 
       (send-request! start-page-url save-fn)
       ;;send the rest of the request
@@ -109,4 +113,4 @@
                 (when (<= @*pending-requests* 0) (close! *permissions-channel*))
                 (recur []))))))
 
-      (println (timer/ms) "Done!" @*responses-count* "urls processed"))))
+      (println (timer/ms) start-page-url "Done!" @*responses-count* "urls processed"))))
