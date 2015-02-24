@@ -8,6 +8,7 @@
 (defn safe-normalize [url opts]
   (try
     (normalize url opts)
+    (catch java.net.MalformedURLException e nil)
     (catch Exception e
       (binding [*out* *err*]
         (println url e)
