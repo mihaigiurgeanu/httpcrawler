@@ -122,5 +122,6 @@
                 (when (<= @*pending-requests* 0) (close! *permissions-channel*))
                 (recur []))))))
 
+      (await *responses-count*)
       (with-stderr
         (println (timer/ms) start-page-url "Done!" @*responses-count* "urls processed")))))
