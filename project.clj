@@ -1,4 +1,4 @@
-(defproject httpcrawler "0.1.0-SNAPSHOT"
+(defproject httpcrawler "0.1.0"
   :description "Very fast web crawler based on http-kit"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
